@@ -2,7 +2,6 @@
 
 A single-page tool that generates a Python script which creates **Outlook email drafts** from an Excel contact list. Fill in a form, download the script, run it, and review the drafts in Outlook before sending. Nothing is sent automatically.
 
-一个网页小工具：填写表单后生成 Python 脚本，脚本会根据 Excel 名单在 Outlook 草稿箱里批量生成邮件草稿，由你检查后手动发送。
 
 ---
 
@@ -100,13 +99,4 @@ The page runs entirely in your browser and never reads or uploads your Excel fil
 - Plain-text email body (no HTML formatting).
 
 ---
-
-## 中文说明
-
-1. 打开 `email_generator.html`，填写 Excel 文件名、邮箱列名，以及需要替换的其他列（Excel 列名 + 占位符名称）。
-2. 填写抄送 CC、密件抄送 BCC（多个邮箱用分号隔开）、邮件主题和正文。
-3. 点击"生成并下载 Python 脚本"，得到 `create_drafts.py`。
-4. 把脚本和 Excel 文件放在桌面，打开 Outlook，在 PowerShell 运行 `python C:\Users\你的用户名\Desktop\create_drafts.py`。
-5. 到 Outlook 草稿箱检查邮件，确认后手动发送。
-
 使用条件：Windows 系统、已安装并登录桌面版 Outlook、已安装 Python 及 `pandas`、`openpyxl`、`pywin32`。
