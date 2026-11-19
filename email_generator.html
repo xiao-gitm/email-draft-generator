@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邮件脚本生成器</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #c8f55a;
+    --accent-dim: #9abb3f;
+    --text: #f0f0f0;
+    --text-muted: #777;
+    --input-bg: #141414;
+    --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 40px 20px; }
+  .container { max-width: 780px; margin: 0 auto; }
+  header { margin-bottom: 48px; }
+  .tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); padding: 3px 10px; border-radius: 100px; margin-bottom: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
+  h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin-bottom: 10px; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--text-muted); font-size: 15px; font-weight: 300; }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 20px; }
+  .section-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 7px; font-weight: 400; }
+  label span { color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; margin-left: 4px; }
+  input, textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 11px 14px; outline: none; transition: border-color 0.2s; resize: vertical; }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: #444; }
+  textarea { min-height: 220px; font-size: 13px; line-height: 1.7; }
+  .hint { font-size: 12px; color: #555; margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+  .col-header-row { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 10px; margin-bottom: 8px; }
+  .col-header { font-size: 11px; color: #555; font-family: 'DM Mono', monospace; padding-left: 2px; }
+  .col-row { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 10px; margin-bottom: 8px; align-items: center; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .col-row input { margin: 0; }
+  .remove-btn { width: 36px; height: 36px; background: #2a1010; border: 1px solid #5a1818; border-radius: var(--radius); color: #f55a5a; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .remove-btn:hover { background: #f55a5a; color: #fff; }
+  .add-col-btn { margin-top: 10px; background: transparent; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 12px; padding: 9px 16px; cursor: pointer; transition: all 0.15s; width: 100%; }
+  .add-col-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .pill-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .placeholder-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; min-height: 28px; }
+  .pill { font-family: 'DM Mono', monospace; font-size: 11px; background: #1e2a0e; color: var(--accent); border: 1px solid #3a5018; padding: 4px 10px; border-radius: 100px; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .pill:hover { background: var(--accent); color: #000; }
+
+  .generate-btn { width: 100%; background: var(--accent); color: #000; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; padding: 16px; cursor: pointer; transition: all 0.2s; margin-top: 8px; letter-spacing: 0.02em; }
+  .generate-btn:hover { background: var(--accent-dim); transform: translateY(-1px); }
+  .generate-btn:active { transform: translateY(0); }
+
+  .success { display: none; background: #0d1f00; border: 1px solid #3a5018; border-radius: var(--radius); padding: 16px 20px; margin-top: 16px; font-size: 14px; color: var(--accent); text-align: center; line-height: 1.9; }
+  .success.show { display: block; }
+  .error { display: none; background: #1f0d0d; border: 1px solid #5a1818; border-radius: var(--radius); padding: 16px 20px; margin-top: 16px; font-size: 14px; color: #f55a5a; }
+  .error.show { display: block; }
+  footer { text-align: center; color: #333; font-size: 12px; font-family: 'DM Mono', monospace; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="tag">Outlook Draft Generator</div>
+    <h1>邮件脚本<span>生成器</span></h1>
+    <p class="subtitle">填写以下信息，自动生成可运行的 Python 脚本</p>
+  </header>
+
+  <!-- 01 -->
+  <div class="section">
+    <div class="section-title">01 · Excel 表格设置</div>
+
+    <div class="field">
+      <label>Excel 文件名 <span>必填</span></label>
+      <input id="excelName" type="text" placeholder="例：MyContacts.xlsx" >
+      <div class="hint">文件必须放在桌面上</div>
+    </div>
+
+    <div class="field">
+      <label>邮箱列名 <span>必填 · 用于填写收件人</span></label>
+      <input id="colEmail" type="text" placeholder="例：Email">
+    </div>
+
+    <div class="field">
+      <label>其他列 <span>可作为占位符插入邮件正文</span></label>
+      <div class="col-header-row">
+        <span class="col-header">Excel 列名（与表格一致）</span>
+        <span class="col-header">占位符（用于正文）</span>
+        <span></span>
+      </div>
+      <div id="colList"></div>
+      <button class="add-col-btn" onclick="addColumn()">＋ 添加列</button>
+      <div class="hint">例：Excel列名填 "Name"，占位符填 "姓名"，正文里写 {姓名} 就会自动替换</div>
+    </div>
+  </div>
+
+  <!-- 02 -->
+  <div class="section">
+    <div class="section-title">02 · 收件人设置</div>
+    <div class="field">
+      <label>抄送 CC <span>多个邮箱用分号隔开</span></label>
+      <input id="cc" type="text" placeholder="例：cc@company.com; cc2@company.com">
+    </div>
+    <div class="field">
+      <label>密件抄送 BCC <span>多个邮箱用分号隔开</span></label>
+      <input id="bcc" type="text" placeholder="例：bcc1@company.com; bcc2@company.com">
+    </div>
+  </div>
+
+  <!-- 03 -->
+  <div class="section">
+    <div class="section-title">03 · 邮件内容</div>
+
+    <div class="field">
+      <label>邮件主题 <span>必填</span></label>
+      <input id="subject" type="text" >
+    </div>
+
+    <div class="field">
+      <label>邮件正文 <span>必填</span></label>
+      <div class="pill-label">点击插入占位符（根据上方列自动生成）：</div>
+      <div class="placeholder-row" id="pillRow"></div>
+      <textarea id="body"></textarea>
+      <div class="hint">占位符发送时自动替换为 Excel 对应列的内容</div>
+    </div>
+  </div>
+
+  <button class="generate-btn" onclick="generate()">⬇ 生成并下载 Python 脚本</button>
+  <div class="success" id="success">
+    ✅ 脚本已下载！把文件放到桌面，然后在 PowerShell 运行：<br><br>
+    <code style="font-family:'DM Mono',monospace;font-size:12px;">python C:\Users\你的用户名\Desktop\create_drafts.py</code>
+  </div>
+  <div class="error" id="error"></div>
+
+</div>
+<footer>Outlook Draft Generator</footer>
+
+<script>
+  let colCount = 0;
+
+  function init() {
+    addColumn('', '');
+  }
+
+  function addColumn(excelVal = '', placeholderVal = '') {
+    colCount++;
+    const id = colCount;
+    const div = document.createElement('div');
+    div.className = 'col-row';
+    div.id = `col-${id}`;
+    div.innerHTML = `
+      <input type="text" placeholder="例：Name" value="${excelVal}" id="excel-${id}" oninput="updatePills()">
+      <input type="text" placeholder="例：姓名" value="${placeholderVal}" id="ph-${id}" oninput="updatePills()">
+      <button class="remove-btn" onclick="removeColumn(${id})" title="删除">✕</button>
+    `;
+    document.getElementById('colList').appendChild(div);
+    updatePills();
+  }
+
+  function removeColumn(id) {
+    const el = document.getElementById(`col-${id}`);
+    if (el) el.remove();
+    updatePills();
+  }
+
+  function updatePills() {
+    const pillRow = document.getElementById('pillRow');
+    pillRow.innerHTML = '';
+    document.querySelectorAll('.col-row').forEach(row => {
+      const ph = row.querySelector('[id^="ph-"]').value.trim();
+      if (ph) {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.textContent = `＋ {${ph}}`;
+        pill.onclick = () => insertPlaceholder(`{${ph}}`);
+        pillRow.appendChild(pill);
+      }
+    });
+  }
+
+  function insertPlaceholder(text) {
+    const ta = document.getElementById('body');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+    ta.focus();
+  }
+
+  function getColumns() {
+    const cols = [];
+    document.querySelectorAll('.col-row').forEach(row => {
+      const excel = row.querySelector('[id^="excel-"]').value.trim();
+      const ph    = row.querySelector('[id^="ph-"]').value.trim();
+      if (excel && ph) cols.push({ excel, ph });
+    });
+    return cols;
+  }
+
+  function generate() {
+    const excelName = document.getElementById('excelName').value.trim();
+    const colEmail  = document.getElementById('colEmail').value.trim();
+    const cc        = document.getElementById('cc').value.trim();
+    const bcc       = document.getElementById('bcc').value.trim();
+    const subject   = document.getElementById('subject').value.trim();
+    const body      = document.getElementById('body').value;
+    const cols      = getColumns();
+
+    const errorEl   = document.getElementById('error');
+    const successEl = document.getElementById('success');
+    errorEl.classList.remove('show');
+    successEl.classList.remove('show');
+
+    const missing = [];
+    if (!excelName)   missing.push('Excel 文件名');
+    if (!colEmail)    missing.push('邮箱列名');
+    if (!subject)     missing.push('邮件主题');
+    if (!body.trim()) missing.push('邮件正文');
+    if (cols.length === 0) missing.push('至少添加一列');
+
+    if (missing.length > 0) {
+      errorEl.textContent = '❌ 请填写：' + missing.join('、');
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // 替换正文中的中文占位符为 Python 变量
+    let bodyPython = body;
+    cols.forEach((c, i) => {
+      const regex = new RegExp(`\\{${c.ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
+      bodyPython = bodyPython.replace(regex, `{col_${i}}`);
+    });
+
+    const varLines  = cols.map((c, i) => `            col_${i} = str(row['${c.excel}']).strip()  # ${c.ph}`).join('\n');
+    const funcArgs  = cols.map((c, i) => `col_${i}`).join(', ');
+    const firstCol  = cols[0] ? `row.get('${cols[0].excel}', '未知')` : "'未知'";
+
+    const code =
+`import pandas as pd
+import win32com.client
+import os
+
+# ============================================================
+# 设置
+# ============================================================
+CC_EMAILS  = "${cc}"
+BCC_EMAILS = "${bcc}"
+SUBJECT    = "${subject}"
+EXCEL_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "${excelName}")
+
+# ============================================================
+# 邮件模板
+# ============================================================
+def generate_body(${funcArgs}):
+    return f"""${bodyPython}"""
+
+# ============================================================
+# 创建草稿
+# ============================================================
+def create_drafts():
+    if not os.path.exists(EXCEL_PATH):
+        print(f"\\u274c \\u627e\\u4e0d\\u5230 Excel \\u6587\\u4ef6\\uff1a{EXCEL_PATH}")
+        print("\\u8bf7\\u786e\\u8ba4\\u6587\\u4ef6\\u540d\\u6b63\\u786e\\u4e14\\u653e\\u5728\\u684c\\u9762\\u4e0a")
+        return
+
+    df = pd.read_excel(EXCEL_PATH)
+    df.columns = df.columns.str.strip()
+    print(f"\\U0001f4cb \\u5171\\u8bfb\\u53d6\\u5230 {len(df)} \\u6761\\u8bb0\\u5f55\\uff0c\\u5f00\\u59cb\\u751f\\u6210\\u8349\\u7a3f...\\n")
+
+    outlook = win32com.client.Dispatch('outlook.application')
+    success = 0
+    failed  = 0
+
+    for _, row in df.iterrows():
+        try:
+            email = str(row['${colEmail}']).strip()
+${varLines}
+
+            if '@' not in email:
+                print(f"\\u26a0\\ufe0f  \\u8df3\\u8fc7\\uff08\\u90ae\\u7b95\\u65e0\\u6548\\uff09\\uff1a{email}")
+                failed += 1
+                continue
+
+            mail         = outlook.CreateItem(0)
+            mail.To      = email
+            mail.CC      = CC_EMAILS
+            mail.BCC     = BCC_EMAILS
+            mail.Subject = SUBJECT
+            mail.Body    = generate_body(${funcArgs})
+            mail.Save()
+
+            success += 1
+            print(f"\\u2705 {success}. \\u8349\\u7a3f\\u5df2\\u5b58\\u5165 \\u2192 {email}")
+
+        except Exception as e:
+            failed += 1
+            print(f"\\u274c \\u5931\\u8d25\\uff1a{${firstCol}} - {e}")
+
+    print(f"\\n{'='*50}")
+    print(f"\\U0001f389 \\u5b8c\\u6210\\uff01\\u6210\\u529f {success} \\u5c01\\uff0c\\u5931\\u8d25 {failed} \\u5c01")
+    print("\\U0001f4ec \\u8bf7\\u6253\\u5f00 Outlook \\u2192 \\u8349\\u7a3f\\u7b5e \\u9010\\u4e00\\u68c0\\u67e5\\u540e\\u624b\\u52a8\\u53d1\\u9001")
+
+if __name__ == "__main__":
+    create_drafts()
+`;
+
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'create_drafts.py';
+    a.click();
+    URL.revokeObjectURL(url);
+    successEl.classList.add('show');
+  }
+
+  init();
+</script>
+</body>
+</html>
